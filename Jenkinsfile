@@ -1,8 +1,16 @@
 pipeline{
+
   agent {
     node {
       label 'nodejs-node'
     }
+  }
+
+  environment {
+    registryCredential = 'docker-hub-credentials'
+    registryFrontend = 'ramiralz/frontend-demo'
+    sonarqubeCredentials = 'sonarqube-credentials'
+    sonarqubeServer = 'sonarqube-server'
   }
 
   stages {
@@ -18,7 +26,7 @@ pipeline{
 
     stage('SonarQube analysis') {
       steps {
-        withSonarQubeEnv(credentialsId: "sonarqube-credentials", installationName: "sonarqube-server"){
+        withSonarQubeEnv(credentialsId: sonarqubeCredentials, installationName: sonarqubeServer){
           sh 'npm run sonar'
         }
       }
@@ -37,6 +45,24 @@ pipeline{
       }
     }
 
+    stage('Push Image to Docker Hub') {
+      steps {
+        script {
+          dockerImage = docker.build registryBackend + ":latest"
+          docker.withRegistry( '', registryCredential) {
+              dockerImage.push()
+          }
+        }
+      }
+    }
+
   }
+
+  post {
+     always {
+       sh "docker logout"
+       sh "docker rmi -f " + registryFrontend + ":latest"
+     }
+   }
 
 }
