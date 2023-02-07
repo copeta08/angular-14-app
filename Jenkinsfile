@@ -48,7 +48,7 @@ pipeline{
     stage('Push Image to Docker Hub') {
       steps {
         script {
-          dockerImage = docker.build registryBackend + ":latest"
+          dockerImage = docker.build registryFrontend + ":latest"
           docker.withRegistry( '', registryCredential) {
               dockerImage.push()
           }
